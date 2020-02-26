@@ -3,8 +3,13 @@
 #include <array>
 #include <exception>
 #include <algorithm>
+#define MP_INT HIDEN_MP_TYPE
 #include <gmp.h>
+#undef MP_INT
 #include <iostream>
+#include <string>
+#include <cmath>
+#include <cstring>
 
 //	presision - total significant digits
 //	decimals - digits after dot
@@ -58,7 +63,6 @@ class FixPoint
 			mpz_._mp_d = &data[0];
 			mpz_ui_pow_ui(&mpz_, 10, decimal);
 			mpz_tdiv_q_ui(&mpz_, &mpz_, 2);
-			mpz_sub_ui(&mpz_, &mpz_, 1);
 			std::copy(data.begin(), data.begin() + data_.size(), data_.begin());
 			mpz_._mp_alloc = data_.size();
 			mpz_._mp_d = &data_[0];
@@ -83,15 +87,50 @@ class FixPoint
 	__mpz_struct mpz_;
 
 public:
-	FixPoint(const char* strVal = nullptr)
+	FixPoint()
 	{
 		mpz_._mp_alloc = data_.size();
 		mpz_._mp_size = 0;
 		mpz_._mp_d = &data_[0];
 		//mpz_init(&mpz_);
+	}
+
+	FixPoint(const char* strVal)
+	  :FixPoint()
+	{
 		*this = strVal;
 	}
 
+	FixPoint(const std::string_view& strVal)
+	  :FixPoint()
+	{
+		*this = strVal;
+	}
+
+	FixPoint(double val)
+	  :FixPoint()
+	{
+		*this = val;
+	}
+
+	FixPoint(const FixPoint<presision, decimals>& val)
+	  :FixPoint()
+	{
+		*this = val;
+	}
+/*
+	FixPoint(long val)
+		:FixPoint()
+	{
+		*this = val;
+	}
+
+	FixPoint(unsigned long val)
+		:FixPoint()
+	{
+		*this = val;
+	}
+*/
 	~FixPoint()
 	{
 	}
@@ -99,15 +138,43 @@ public:
 	FixPoint<presision, decimals>& operator= (const FixPoint<presision, decimals>& from)
 	{
 		mpz_._mp_size = from.mpz_._mp_size;
-		data_ = from.data_;
+		std::copy(from.data_.begin(), from.data_.begin() + data_.size(), data_.begin());
+		return *this;
+	}
+/*
+	FixPoint<presision, decimals>& operator= (long from)
+	{
+		mpz_set_si(&mpz_, from);
+		if (abs(mpz_._mp_size) > cLimbs)
+			throw std::runtime_error("FixPoint overflow");
 		return *this;
 	}
 
 	FixPoint<presision, decimals>& operator= (unsigned long from)
 	{
 		mpz_set_ui(&mpz_, from);
-		if (mpz_._mp_size > cLimbs)
+		if (abs(mpz_._mp_size) > cLimbs)
 			throw std::runtime_error("FixPoint overflow");
+		return *this;
+	}
+*/
+	FixPoint<presision, decimals>& operator= (double from)
+	{
+		mpz_set_d(&mpz_, from*pow(double(10.), double(decimals)));
+		if (abs(mpz_._mp_size) > cLimbs)
+			throw std::runtime_error("FixPoint overflow");
+		return *this;
+	}
+
+	FixPoint<presision, decimals>& operator= (const std::string& from)
+	{
+		*this = from.c_str();
+		return *this;
+	}
+
+	FixPoint<presision, decimals>& operator= (const std::string_view& from)
+	{
+		*this = from.data();
 		return *this;
 	}
 
@@ -155,7 +222,7 @@ public:
 			}
 			std::copy(data.begin(), data.begin() + data_.size(), data_.begin());
 			mpz_._mp_size = mpz._mp_size;
-			if (mpz_._mp_size > cLimbs)
+			if (abs(mpz_._mp_size) > cLimbs)
 				throw std::runtime_error("FixPoint overflow");
 
 		}
@@ -166,26 +233,33 @@ public:
 		return *this;
 	}
 
-	operator std::string ()
+	operator std::string () const
 	{
 		char buff[presision + 5];
 		to_string(buff);
 		return std::string(buff);
 	}
 
-	char* to_string(char* outBuff)
+	std::string to_string() const
+	{
+		return (std::string)*this;
+	}
+
+	char* to_string(char* outBuff) const
 	{
 		std::array<mp_limb_t, cLimbs + 1> dataQ;
 		__mpz_struct mpzQ;
 		mpzQ._mp_alloc = dataQ.size();
 		mpzQ._mp_size = 0;
 		mpzQ._mp_d = &dataQ[0];
-		std::array<mp_limb_t, cLimbs + 4> dataR;
+		std::array<mp_limb_t, cLimbs + 1> dataR;
 		__mpz_struct mpzR;
 		mpzR._mp_alloc = dataR.size();
 		mpzR._mp_size = 0;
 		mpzR._mp_d = &dataR[0];
-		mpz_tdiv_qr(&mpzQ, &mpzR, &mpz_, &dividers_[decimals].mpz_);
+		mpz_tdiv_qr(&mpzQ, &mpzR, &mpz_, &(dividers_[decimals].mpz_));
+		//std::cout << dividers_[decimals].data_[0] << " " << mpzQ._mp_d[0] << std::endl;
+		mpz_abs(&mpzR, &mpzR);
 		mpz_get_str(outBuff, 10, &mpzQ);
 		if (mpzR._mp_size > 0)
 		{
@@ -205,11 +279,11 @@ public:
 		return outBuff;
 	}
 
-	FixPoint<presision, decimals> operator+ (const FixPoint<presision, decimals>& other)
+	FixPoint<presision, decimals> operator+ (const FixPoint<presision, decimals>& other) const
 	{
 		FixPoint<presision, decimals> ret;
 		mpz_add(&ret.mpz_, &mpz_, &other.mpz_);
-		if (ret.mpz_._mp_size > ret.cLimbs)
+		if (abs(ret.mpz_._mp_size) > ret.cLimbs)
 			throw std::runtime_error("FixPoint overflow");
 		return ret;
 	}
@@ -217,16 +291,16 @@ public:
 	FixPoint<presision, decimals>& operator+= (const FixPoint<presision, decimals>& other)
 	{
 		mpz_add(&mpz_, &mpz_, &other.mpz_);
-		if (mpz_._mp_size > cLimbs)
+		if (abs(mpz_._mp_size) > cLimbs)
 			throw std::runtime_error("FixPoint overflow");
 		return *this;
 	}
 
-	FixPoint<presision, decimals> operator- (const FixPoint<presision, decimals>& other)
+	FixPoint<presision, decimals> operator- (const FixPoint<presision, decimals>& other) const
 	{
 		FixPoint<presision, decimals> ret;
-		mpz_sub(&ret->mpz_, &mpz_, &other.mpz_);
-		if (ret.mpz_._mp_size < -ret.cLimbs)
+		mpz_sub(&ret.mpz_, &mpz_, &other.mpz_);
+		if (abs(ret.mpz_._mp_size) > ret.cLimbs)
 			throw std::runtime_error("FixPoint overflow");
 		return ret;
 	}
@@ -234,12 +308,12 @@ public:
 	FixPoint<presision, decimals>& operator-= (const FixPoint<presision, decimals>& other)
 	{
 		mpz_sub(&mpz_, &mpz_, &other.mpz_);
-		if (mpz_._mp_size < -cLimbs)
+		if (abs(mpz_._mp_size) > cLimbs)
 			throw std::runtime_error("FixPoint overflow");
 		return *this;
 	}
 
-	FixPoint<presision, decimals> operator* (const FixPoint<presision, decimals>& other)
+	FixPoint<presision, decimals> operator* (const FixPoint<presision, decimals>& other) const
 	{
 		FixPoint<presision, decimals> ret;
 
@@ -255,7 +329,7 @@ public:
 
 		//mpz_mul(&ret.mpz_, &mpz_, &other.mpz_);
 		//mpz_tdiv_q(&ret.mpz_, &ret.mpz_, &other.dividers_[decimals].mpz_);
-		if (ret.mpz_._mp_size > ret.cLimbs)
+		if (abs(ret.mpz_._mp_size) > ret.cLimbs)
 			throw std::runtime_error("FixPoint overflow");
 		return ret;
 	}
@@ -271,12 +345,12 @@ public:
 		mpz_tdiv_q(&mpz, &mpz, &other.dividers_[decimals].mpz_);
 		std::copy(data.begin(), data.begin() + data_.size(), data_.begin());
 		mpz_._mp_size = mpz._mp_size;
-		if (mpz_._mp_size > cLimbs)
+		if (abs(mpz_._mp_size) > cLimbs)
 			throw std::runtime_error("FixPoint overflow");
 		return *this;
 	}
 
-	FixPoint<presision, decimals> operator/ (const FixPoint<presision, decimals>& other)
+	FixPoint<presision, decimals> operator/ (const FixPoint<presision, decimals>& other) const
 	{
 		FixPoint<presision, decimals> ret;
 		std::array<mp_limb_t, cLimbs + other.cLimbs + 4> data;
@@ -288,7 +362,7 @@ public:
 		mpz_tdiv_q(&mpz, &mpz, &other.mpz_);
 		std::copy(data.begin(), data.begin() + ret.data_.size(), ret.data_.begin());
 		ret.mpz_._mp_size = mpz._mp_size;
-		if (ret.mpz_._mp_size > ret.cLimbs)
+		if (abs(ret.mpz_._mp_size) > ret.cLimbs)
 			throw std::runtime_error("FixPoint overflow");
 		return ret;
 	}
@@ -304,28 +378,68 @@ public:
 		mpz_tdiv_q(&mpz, &mpz, &other.mpz_);
 		std::copy(data.begin(), data.begin() + data_.size(), data_.begin());
 		mpz_._mp_size = mpz._mp_size;
-		if (mpz_._mp_size > cLimbs)
+		if (abs(mpz_._mp_size) > cLimbs)
 			throw std::runtime_error("FixPoint overflow");
 		return *this;
 	}
 
-	bool operator< (const FixPoint<presision, decimals>& other)
+	FixPoint<presision, decimals> operator- () const
+	{
+		FixPoint<presision, decimals> ret;
+		mpz_neg(&ret.mpz_, &mpz_);
+		return ret;
+	}
+
+	bool operator< (const FixPoint<presision, decimals>& other) const
 	{
 		return mpz_cmp(&mpz_ , &other.mpz_) < 0;
 	}
 
-	bool operator> (const FixPoint<presision, decimals>& other)
+	bool operator> (const FixPoint<presision, decimals>& other) const
 	{
 		return mpz_cmp(&mpz_ , &other.mpz_) > 0;
 	}
 
-	bool operator== (const FixPoint<presision, decimals>& other)
+	bool operator== (const FixPoint<presision, decimals>& other) const
 	{
 		return mpz_cmp(&mpz_ , &other.mpz_) == 0;
 	}
 
+	bool operator< (double other) const
+	{
+		return mpz_cmp_si(&mpz_ , other * pow(10, decimals)) < 0;
+	}
+
+	bool operator> (double other) const
+	{
+		return mpz_cmp_si(&mpz_ , other * pow(10, decimals)) > 0;
+	}
+
+	bool operator== (double other) const
+	{
+		return mpz_cmp_si(&mpz_ , other * pow(10, decimals)) == 0;
+	}
+
+	template<typename T>
+	bool operator!= (const T& other) const
+	{
+		return !operator==(other);
+	}
+
+	template<typename T>
+	bool operator<= (const T& other) const
+	{
+		return !operator>(other);
+	}
+
+	template<typename T>
+	bool operator>= (const T& other) const
+	{
+		return !operator<(other);
+	}
+
 	// round to lower value
-	void round(long dec)
+	FixPoint<presision, decimals>& round(long dec)
 	{
 		std::array<mp_limb_t, cLimbs + 1> dataQ;
 		__mpz_struct mpzQ;
@@ -339,10 +453,11 @@ public:
 		mpzR._mp_d = &dataR[0];
 		mpz_tdiv_qr(&mpzQ, &mpzR, &mpz_, &dividers_[decimals - dec].mpz_);
 		mpz_sub(&mpz_, &mpz_, &mpzR);
+		return *this;
 	}
 
 	// mathemetical round
-	void mround(long dec)
+	FixPoint<presision, decimals>& mround(long dec)
 	{
 		std::array<mp_limb_t, cLimbs + 1> dataQ;
 		__mpz_struct mpzQ;
@@ -357,6 +472,12 @@ public:
 		mpz_add(&mpz_, &mpz_, &addRounders_[decimals - dec].mpz_);
 		mpz_tdiv_qr(&mpzQ, &mpzR, &mpz_, &dividers_[decimals - dec].mpz_);
 		mpz_sub(&mpz_, &mpz_, &mpzR);
+		return *this;
+	}
+
+	double get_d()
+	{
+		return mpz_get_d(&mpz_) / pow(10., decimals);
 	}
 
 };
@@ -365,6 +486,66 @@ template<size_t presision, size_t decimals>
 typename FixPoint<presision, decimals>::Dividers FixPoint<presision, decimals>::dividers_;
 template<size_t presision, size_t decimals>
 typename FixPoint<presision, decimals>::AddRounders FixPoint<presision, decimals>::addRounders_;
+
+template<size_t presision, size_t decimals>
+inline std::basic_ostream<char>& operator<<(std::basic_ostream<char>& writer, const FixPoint<presision, decimals>& val)
+{
+	writer << (std::string)val;
+	return writer;
+}
+
+template<size_t presision, size_t decimals, typename T1, typename = std::enable_if_t<std::is_convertible<T1, FixPoint<presision, decimals>>::value>>
+FixPoint<presision, decimals> operator+ (const FixPoint<presision, decimals>& dec1, const T1& dec2)
+{
+	return dec1 + FixPoint<presision, decimals>(dec2);
+}
+
+template<size_t presision, size_t decimals, typename T1, typename = std::enable_if_t<std::is_convertible<T1, FixPoint<presision, decimals>>::value>>
+FixPoint<presision, decimals> operator+ (const T1& dec1, const FixPoint<presision, decimals>& dec2)
+{
+	return FixPoint<presision, decimals>(dec1) + dec2;
+}
+
+template<size_t presision, size_t decimals, typename T1, typename = std::enable_if_t<std::is_convertible<T1, FixPoint<presision, decimals>>::value>>
+FixPoint<presision, decimals> operator- (const FixPoint<presision, decimals>& dec1, const T1& dec2)
+{
+	return dec1 - FixPoint<presision, decimals>(dec2);
+}
+
+template<size_t presision, size_t decimals, typename T1, typename = std::enable_if_t<std::is_convertible<T1, FixPoint<presision, decimals>>::value>>
+FixPoint<presision, decimals> operator- (const T1& dec1, const FixPoint<presision, decimals>& dec2)
+{
+	return FixPoint<presision, decimals>(dec1) - dec2;
+}
+
+template<size_t presision, size_t decimals, typename T1, typename = std::enable_if_t<std::is_convertible<T1, FixPoint<presision, decimals>>::value>>
+FixPoint<presision, decimals> operator* (const FixPoint<presision, decimals>& dec1, const T1& dec2)
+{
+	return dec1 * FixPoint<presision, decimals>(dec2);
+}
+
+template<size_t presision, size_t decimals, typename T1, typename = std::enable_if_t<std::is_convertible<T1, FixPoint<presision, decimals>>::value>>
+FixPoint<presision, decimals> operator* (const T1& dec1, const FixPoint<presision, decimals>& dec2)
+{
+	return FixPoint<presision, decimals>(dec1) * dec2;
+}
+
+template<size_t presision, size_t decimals, typename T1, typename = std::enable_if_t<std::is_convertible<T1, FixPoint<presision, decimals>>::value>>
+FixPoint<presision, decimals> operator/ (const FixPoint<presision, decimals>& dec1, const T1& dec2)
+{
+	return dec1 / FixPoint<presision, decimals>(dec2);
+}
+
+template<size_t presision, size_t decimals, typename T1, typename = std::enable_if_t<std::is_convertible<T1, FixPoint<presision, decimals>>::value>>
+FixPoint<presision, decimals> operator/ (const T1& dec1, const FixPoint<presision, decimals>& dec2)
+{
+	return FixPoint<presision, decimals>(dec1) / dec2;
+}
+
+
+
+
+
 
 //#define ADDITIONAL_TESTS
 
@@ -389,9 +570,9 @@ inline void FixPointPerfTest()
 
 	using decimal = FixPoint<37, 19>;
 	decimal tm1;
-	tm1 = 10100000000000000000ul;
+	tm1 = 1.01;
 	decimal tm2;
-	tm2 = 10200000000000000000ul;
+	tm2 = 1.02;
 
 	//	from string tests
 	decimal tm3;
@@ -407,7 +588,7 @@ inline void FixPointPerfTest()
 	assert(tm2 == tm3);
 	tm3 = "1";
 	decimal tm4;
-	tm4 = 10000000000000000000ul;
+	tm4 = 1.;
 	assert(tm4 == tm3);
 	tm3 = "1.0302";
 	assert(tm1 * tm2 == tm3);
@@ -436,6 +617,11 @@ inline void FixPointPerfTest()
 	tm3 = "1.0099004900990099009";
 	tm3.mround(6);
 	assert(tm3 == "1.0099");
+	assert(tm2 > tm1);
+	assert(tm1 < tm2);
+	assert(tm2 >= tm1);
+	assert(tm1 <= tm2);
+	//assert(decimal(1900.) == decimal("1900"));
 
 
 	// Performance tests.
@@ -470,12 +656,12 @@ inline void FixPointPerfTest()
 	std::cout << "FixPoint div time: " << (t/1000000) << "ms." << ((t/1000) % 1000) << "."  << (t % 1000) << std::endl;
 
 	clock_gettime(CLOCK_REALTIME, &t1);
-	tm1 = 10100000000000000000ul;
+	tm1 = "1.01";
 	for (int i = 0; i < 1000000; ++i)
 	{
-		decimal tm2;
-		tm2 = 10200000000000000000ul;
-		decimal tm3 = tm1 / tm2;
+		decimal tm22;
+		tm22 = tm2;
+		decimal tm3 = tm1 / tm22;
 	}
 	clock_gettime(CLOCK_REALTIME, &t2);
 
@@ -483,7 +669,7 @@ inline void FixPointPerfTest()
 	std::cout << "FixPoint div with construct time: " << (t/1000000) << "ms." << ((t/1000) % 1000) << "."  << (t % 1000) << std::endl;
 
 	clock_gettime(CLOCK_REALTIME, &t1);
-	tm1 = 10100000000000000000ul;
+	tm1 = "1.01";
 	for (int i = 0; i < 1000000; ++i)
 	{
 		tmpstring = tm1;
@@ -494,7 +680,7 @@ inline void FixPointPerfTest()
 	std::cout << "FixPoint to string time: " << (t/1000000) << "ms." << ((t/1000) % 1000) << "."  << (t % 1000) << std::endl;
 
 	clock_gettime(CLOCK_REALTIME, &t1);
-	tm1 = 10100000000000000000ul;
+	tm1 = "1.01";
 	for (int i = 0; i < 1000000; ++i)
 	{
 		tm1 = "1.0018";
