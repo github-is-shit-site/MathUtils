@@ -440,8 +440,12 @@ public:
 
 	// round to lower value
 	FixPoint<presision, decimals>& round(long dec)
-	{
-		std::array<mp_limb_t, cLimbs + 1> dataQ;
+        {
+                if (dec > long(decimals))
+                        dec = long(decimals);
+                if (dec <=  long(decimals) - long(presision))
+                        dec = long(decimals) - long(presision) + 1;
+                std::array<mp_limb_t, cLimbs + 1> dataQ;
 		__mpz_struct mpzQ;
 		mpzQ._mp_alloc = dataQ.size();
 		mpzQ._mp_size = 0;
@@ -459,7 +463,11 @@ public:
 	// mathemetical round
 	FixPoint<presision, decimals>& mround(long dec)
 	{
-		std::array<mp_limb_t, cLimbs + 1> dataQ;
+                if (dec > long(decimals))
+                        dec = long(decimals);
+                if (dec <=  long(decimals) - long(presision))
+                        dec = long(decimals) - long(presision) + 1;
+                std::array<mp_limb_t, cLimbs + 1> dataQ;
 		__mpz_struct mpzQ;
 		mpzQ._mp_alloc = dataQ.size();
 		mpzQ._mp_size = 0;
