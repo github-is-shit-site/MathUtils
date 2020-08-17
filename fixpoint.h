@@ -407,17 +407,23 @@ public:
 
 	bool operator< (double other) const
 	{
-		return mpz_cmp_si(&mpz_ , other * pow(10, decimals)) < 0;
+        FixPoint<presision, decimals> tm(other);
+        return *this < tm;
+//		return mpz_cmp_si(&mpz_ , other * pow(10, decimals)) < 0;
 	}
 
 	bool operator> (double other) const
 	{
-		return mpz_cmp_si(&mpz_ , other * pow(10, decimals)) > 0;
+        FixPoint<presision, decimals> tm(other);
+        return *this > tm;
+//		return mpz_cmp_si(&mpz_ , other * pow(10, decimals)) > 0;
 	}
 
 	bool operator== (double other) const
 	{
-		return mpz_cmp_si(&mpz_ , other * pow(10, decimals)) == 0;
+        FixPoint<presision, decimals> tm(other);
+        return *this == tm;
+//		return mpz_cmp_si(&mpz_ , other * pow(10, decimals)) == 0;
 	}
 
 	template<typename T>
@@ -440,12 +446,12 @@ public:
 
 	// round to lower value
 	FixPoint<presision, decimals>& round(long dec)
-        {
-                if (dec > long(decimals))
-                        dec = long(decimals);
-                if (dec <=  long(decimals) - long(presision))
-                        dec = long(decimals) - long(presision) + 1;
-                std::array<mp_limb_t, cLimbs + 1> dataQ;
+    {
+        if (dec > long(decimals))
+                dec = long(decimals);
+        if (dec <=  long(decimals) - long(presision))
+                dec = long(decimals) - long(presision) + 1;
+        std::array<mp_limb_t, cLimbs + 1> dataQ;
 		__mpz_struct mpzQ;
 		mpzQ._mp_alloc = dataQ.size();
 		mpzQ._mp_size = 0;
