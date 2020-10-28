@@ -247,6 +247,7 @@ public:
 
 	char* to_string(char* outBuff) const
 	{
+        *outBuff = 0;
 		std::array<mp_limb_t, cLimbs + 1> dataQ;
 		__mpz_struct mpzQ;
 		mpzQ._mp_alloc = dataQ.size();
@@ -260,7 +261,9 @@ public:
 		mpz_tdiv_qr(&mpzQ, &mpzR, &mpz_, &(dividers_[decimals].mpz_));
 		//std::cout << dividers_[decimals].data_[0] << " " << mpzQ._mp_d[0] << std::endl;
 		mpz_abs(&mpzR, &mpzR);
-		mpz_get_str(outBuff, 10, &mpzQ);
+        if (mpz_sgn(&mpz_) < 0)
+            strcpy(outBuff, "-");
+        mpz_get_str(outBuff + strlen(outBuff), 10, &mpzQ);
 		if (mpzR._mp_size > 0)
 		{
 			char* curWrite = outBuff + strlen(outBuff);
