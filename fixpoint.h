@@ -263,6 +263,7 @@ public:
 		mpz_abs(&mpzR, &mpzR);
         if (mpz_sgn(&mpz_) < 0)
             strcpy(outBuff, "-");
+        mpz_abs(&mpzQ, &mpzQ);
         mpz_get_str(outBuff + strlen(outBuff), 10, &mpzQ);
 		if (mpzR._mp_size > 0)
 		{
