@@ -321,7 +321,7 @@ public:
 	{
 		FixPoint<presision, decimals> ret;
 
-		std::array<mp_limb_t, cLimbs + other.cLimbs + 4> data;
+        std::array<mp_limb_t, 2 * cLimbs + 4> data;
 		__mpz_struct mpz;
 		mpz._mp_alloc = data.size();
 		mpz._mp_size = 0;
@@ -340,7 +340,7 @@ public:
 
 	FixPoint<presision, decimals>& operator*= (const FixPoint<presision, decimals>& other)
 	{
-		std::array<mp_limb_t, cLimbs + other.cLimbs + 4> data;
+        std::array<mp_limb_t, 2 * cLimbs + 4> data;
 		__mpz_struct mpz;
 		mpz._mp_alloc = data.size();
 		mpz._mp_size = 0;
@@ -357,7 +357,7 @@ public:
 	FixPoint<presision, decimals> operator/ (const FixPoint<presision, decimals>& other) const
 	{
 		FixPoint<presision, decimals> ret;
-		std::array<mp_limb_t, cLimbs + other.cLimbs + 4> data;
+        std::array<mp_limb_t, 2 * cLimbs + 4> data;
 		__mpz_struct mpz;
 		mpz._mp_alloc = data.size();
 		mpz._mp_size = 0;
@@ -373,7 +373,7 @@ public:
 
 	FixPoint<presision, decimals>& operator/= (const FixPoint<presision, decimals>& other)
 	{
-		std::array<mp_limb_t, cLimbs + other.cLimbs + 4> data;
+        std::array<mp_limb_t, 2 * cLimbs + 4> data;
 		__mpz_struct mpz;
 		mpz._mp_alloc = data.size();
 		mpz._mp_size = 0;
