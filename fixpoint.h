@@ -87,6 +87,19 @@ class FixPoint
 	__mpz_struct mpz_;
 
 public:
+    static FixPoint<presision, decimals> Get10Pow(long pow)
+    {
+        FixPoint<presision, decimals> ret;
+        pow += long(decimals);
+        if (pow >= long(presision))
+                pow = long(presision) - 1;
+        if (pow < 0 )
+                pow = 0;
+        std::copy(dividers_[pow].data_.begin(), dividers_[pow].data_.begin() + ret.data_.size(), ret.data_.begin());
+        ret.mpz_._mp_size = dividers_[pow].mpz_._mp_size;
+        return  ret;
+    }
+
 	FixPoint()
 	{
 		mpz_._mp_alloc = data_.size();
@@ -470,7 +483,25 @@ public:
 		return *this;
 	}
 
-	// mathemetical round
+    // round to lower value
+    FixPoint<presision, decimals>& round(const FixPoint<presision, decimals>& quant)
+    {
+        std::array<mp_limb_t, cLimbs + 1> dataQ;
+        __mpz_struct mpzQ;
+        mpzQ._mp_alloc = dataQ.size();
+        mpzQ._mp_size = 0;
+        mpzQ._mp_d = &dataQ[0];
+        std::array<mp_limb_t, cLimbs + 4> dataR;
+        __mpz_struct mpzR;
+        mpzR._mp_alloc = dataR.size();
+        mpzR._mp_size = 0;
+        mpzR._mp_d = &dataR[0];
+        mpz_tdiv_qr(&mpzQ, &mpzR, &mpz_, &quant.mpz_);
+        mpz_sub(&mpz_, &mpz_, &mpzR);
+        return *this;
+    }
+
+    // mathemetical round
 	FixPoint<presision, decimals>& mround(long dec)
 	{
                 if (dec > long(decimals))
@@ -493,7 +524,28 @@ public:
 		return *this;
 	}
 
-	double get_d()
+    // mathemetical round
+    FixPoint<presision, decimals>& mround(const FixPoint<presision, decimals>& quant)
+    {
+        std::array<mp_limb_t, cLimbs + 1> dataQ;
+        __mpz_struct mpzQ;
+        mpzQ._mp_alloc = dataQ.size();
+        mpzQ._mp_size = 0;
+        mpzQ._mp_d = &dataQ[0];
+        std::array<mp_limb_t, cLimbs + 4> dataR;
+        __mpz_struct mpzR;
+        mpzR._mp_alloc = dataR.size();
+        mpzR._mp_size = 0;
+        mpzR._mp_d = &dataR[0];
+        //  TODO : needs optimization.
+        FixPoint<presision, decimals> halfQuant = quant / "2";
+        mpz_add(&mpz_, &mpz_, &halfQuant.mpz_);
+        mpz_tdiv_qr(&mpzQ, &mpzR, &mpz_, &quant.mpz_);
+        mpz_sub(&mpz_, &mpz_, &mpzR);
+        return *this;
+    }
+
+    double get_d()
 	{
 		return mpz_get_d(&mpz_) / pow(10., decimals);
 	}
