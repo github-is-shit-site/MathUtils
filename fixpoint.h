@@ -100,6 +100,12 @@ public:
         return  ret;
     }
 
+    static FixPoint<presision, decimals> zero()
+    {
+        static FixPoint<presision, decimals> ret("0");
+        return ret;
+    }
+
 	FixPoint()
 	{
 		mpz_._mp_alloc = data_.size();
@@ -486,6 +492,10 @@ public:
     // round to lower value
     FixPoint<presision, decimals>& round(const FixPoint<presision, decimals>& quant)
     {
+        if (quant == zero())
+            // nothing to round
+            return *this;
+
         std::array<mp_limb_t, cLimbs + 1> dataQ;
         __mpz_struct mpzQ;
         mpzQ._mp_alloc = dataQ.size();
@@ -527,6 +537,10 @@ public:
     // mathemetical round
     FixPoint<presision, decimals>& mround(const FixPoint<presision, decimals>& quant)
     {
+        if (quant == zero())
+            // nothing to round
+            return *this;
+
         std::array<mp_limb_t, cLimbs + 1> dataQ;
         __mpz_struct mpzQ;
         mpzQ._mp_alloc = dataQ.size();
