@@ -10,6 +10,7 @@
 #include <string>
 #include <cmath>
 #include <cstring>
+//#include <charconv>
 
 //	presision - total significant digits
 //	decimals - digits after dot
@@ -193,7 +194,10 @@ public:
 
 	FixPoint<presision, decimals>& operator= (const std::string_view& from)
 	{
-		*this = from.data();
+        char* tm = (char*)alloca(from.size() + 1);
+        memcpy(tm, from.data(), from.size());
+        tm[from.size()] = 0;
+        *this = tm;
 		return *this;
 	}
 
