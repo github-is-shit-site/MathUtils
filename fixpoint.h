@@ -386,7 +386,7 @@ public:
 		mpz._mp_size = 0;
 		mpz._mp_d = &data[0];
 		mpz_mul(&mpz, &mpz_, &other.dividers_[decimals].mpz_);
-		mpz_tdiv_q(&mpz, &mpz, &other.mpz_);
+        mpz_fdiv_q(&mpz, &mpz, &other.mpz_);
 		std::copy(data.begin(), data.begin() + ret.data_.size(), ret.data_.begin());
 		ret.mpz_._mp_size = mpz._mp_size;
 		if (abs(ret.mpz_._mp_size) > ret.cLimbs)
@@ -401,10 +401,8 @@ public:
 		mpz._mp_alloc = data.size();
 		mpz._mp_size = 0;
 		mpz._mp_d = &data[0];
-		mpz_mul(&mpz, &mpz_, &other.divider_.mpz_);
-		mpz_tdiv_q(&mpz, &mpz, &other.mpz_);
-		std::copy(data.begin(), data.begin() + data_.size(), data_.begin());
-		mpz_._mp_size = mpz._mp_size;
+        mpz_mul(&mpz, &mpz_, &other.dividers_[decimals].mpz_);
+        mpz_fdiv_q(&mpz_, &mpz, &other.mpz_);
 		if (abs(mpz_._mp_size) > cLimbs)
 			throw std::runtime_error("FixPoint overflow");
 		return *this;
