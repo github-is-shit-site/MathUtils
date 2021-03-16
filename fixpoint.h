@@ -158,7 +158,8 @@ public:
 	FixPoint<presision, decimals>& operator= (const FixPoint<presision, decimals>& from)
 	{
 		mpz_._mp_size = from.mpz_._mp_size;
-		std::copy(from.data_.begin(), from.data_.begin() + data_.size(), data_.begin());
+        memcpy(&data_[0], &from.data_[0], data_.size() * sizeof(data_[0]));
+        //std::copy(from.data_.begin(), from.data_.begin() + data_.size(), data_.begin());
 		return *this;
 	}
 /*
