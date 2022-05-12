@@ -109,10 +109,8 @@ public:
 
 	FixPoint()
 	{
-		mpz_._mp_alloc = data_.size();
-		mpz_._mp_size = 0;
-		mpz_._mp_d = &data_[0];
-		//mpz_init(&mpz_);
+        InitMpz();
+        mpz_._mp_size = 0;
 	}
 
 	FixPoint(const char* strVal)
@@ -155,6 +153,12 @@ public:
 	{
 	}
 
+    void InitMpz()
+    {
+        mpz_._mp_alloc = data_.size();
+        mpz_._mp_d = &data_[0];
+    }
+
     FixPoint<presision, decimals, IsSMem>& operator= (const FixPoint<presision, decimals, IsSMem>& from)
 	{
 		mpz_._mp_size = from.mpz_._mp_size;
@@ -182,7 +186,7 @@ public:
     FixPoint<presision, decimals, IsSMem>& operator= (double from)
 	{
         if (IsSMem)
-            mpz_._mp_d = &data_[0];
+            InitMpz();
         mpz_set_d(&mpz_, from*pow(double(10.), double(decimals)));
 		if (abs(mpz_._mp_size) > cLimbs)
 			throw std::runtime_error("FixPoint overflow");
@@ -207,7 +211,7 @@ public:
     FixPoint<presision, decimals, IsSMem>& operator= (const char* from)
 	{
         if (IsSMem)
-            mpz_._mp_d = &data_[0];
+            InitMpz();
         if (from != nullptr)
 		{
 			long decimal = decimals;
@@ -317,8 +321,8 @@ public:
 	{
         if (IsSMem)
         {
-            mpz_._mp_d = &data_[0];
-            other.mpz_._mp_d = &other.data_[0];
+            mpz_._mp_d = const_cast<mp_limb_t*>(&data_[0]);
+            other.mpz_._mp_d = const_cast<mp_limb_t*>(&other.data_[0]);
         }
         FixPoint<presision, decimals, IsSMem> ret;
 		mpz_add(&ret.mpz_, &mpz_, &other.mpz_);
@@ -331,8 +335,8 @@ public:
 	{
         if (IsSMem)
         {
-            mpz_._mp_d = &data_[0];
-            other.mpz_._mp_d = &other.data_[0];
+            InitMpz();
+            other.mpz_._mp_d = const_cast<mp_limb_t*>(&other.data_[0]);
         }
         mpz_add(&mpz_, &mpz_, &other.mpz_);
 		if (abs(mpz_._mp_size) > cLimbs)
@@ -344,8 +348,8 @@ public:
 	{
         if (IsSMem)
         {
-            mpz_._mp_d = &data_[0];
-            other.mpz_._mp_d = &other.data_[0];
+            mpz_._mp_d = const_cast<mp_limb_t*>(&data_[0]);
+            other.mpz_._mp_d = const_cast<mp_limb_t*>(&other.data_[0]);
         }
         FixPoint<presision, decimals, IsSMem> ret;
 		mpz_sub(&ret.mpz_, &mpz_, &other.mpz_);
@@ -358,8 +362,8 @@ public:
 	{
         if (IsSMem)
         {
-            mpz_._mp_d = &data_[0];
-            other.mpz_._mp_d = &other.data_[0];
+            InitMpz();
+            other.mpz_._mp_d = const_cast<mp_limb_t*>(&other.data_[0]);
         }
         mpz_sub(&mpz_, &mpz_, &other.mpz_);
 		if (abs(mpz_._mp_size) > cLimbs)
@@ -371,8 +375,8 @@ public:
 	{
         if (IsSMem)
         {
-            mpz_._mp_d = &data_[0];
-            other.mpz_._mp_d = &other.data_[0];
+            mpz_._mp_d = const_cast<mp_limb_t*>(&data_[0]);
+            other.mpz_._mp_d = const_cast<mp_limb_t*>(&other.data_[0]);
         }
         FixPoint<presision, decimals, IsSMem> ret;
 
@@ -397,8 +401,8 @@ public:
 	{
         if (IsSMem)
         {
-            mpz_._mp_d = &data_[0];
-            other.mpz_._mp_d = &other.data_[0];
+            InitMpz();
+            other.mpz_._mp_d = const_cast<mp_limb_t*>(&other.data_[0]);
         }
         std::array<mp_limb_t, 2 * cLimbs + 4> data;
 		__mpz_struct mpz;
@@ -418,8 +422,8 @@ public:
 	{
         if (IsSMem)
         {
-            mpz_._mp_d = &data_[0];
-            other.mpz_._mp_d = &other.data_[0];
+            mpz_._mp_d = const_cast<mp_limb_t*>(&data_[0]);
+            other.mpz_._mp_d = const_cast<mp_limb_t*>(&other.data_[0]);
         }
         FixPoint<presision, decimals, IsSMem> ret;
         std::array<mp_limb_t, 2 * cLimbs + 4> data;
@@ -440,8 +444,8 @@ public:
 	{
         if (IsSMem)
         {
-            mpz_._mp_d = &data_[0];
-            other.mpz_._mp_d = &other.data_[0];
+            InitMpz();
+            other.mpz_._mp_d = const_cast<mp_limb_t*>(&other.data_[0]);
         }
         std::array<mp_limb_t, 2 * cLimbs + 4> data;
 		__mpz_struct mpz;
@@ -458,7 +462,7 @@ public:
     FixPoint<presision, decimals, IsSMem> operator- () const
 	{
         if (IsSMem)
-            mpz_._mp_d = &data_[0];
+            mpz_._mp_d = const_cast<mp_limb_t*>(&data_[0]);
         FixPoint<presision, decimals, IsSMem> ret;
 		mpz_neg(&ret.mpz_, &mpz_);
 		return ret;
@@ -468,8 +472,8 @@ public:
 	{
         if (IsSMem)
         {
-            mpz_._mp_d = &data_[0];
-            other.mpz_._mp_d = &other.data_[0];
+            mpz_._mp_d = const_cast<mp_limb_t*>(&data_[0]);
+            other.mpz_._mp_d = const_cast<mp_limb_t*>(&other.data_[0]);
         }
         return mpz_cmp(&mpz_ , &other.mpz_) < 0;
 	}
@@ -478,8 +482,8 @@ public:
 	{
         if (IsSMem)
         {
-            mpz_._mp_d = &data_[0];
-            other.mpz_._mp_d = &other.data_[0];
+            mpz_._mp_d = const_cast<mp_limb_t*>(&data_[0]);
+            other.mpz_._mp_d = const_cast<mp_limb_t*>(&other.data_[0]);
         }
         return mpz_cmp(&mpz_ , &other.mpz_) > 0;
 	}
@@ -537,7 +541,7 @@ public:
     FixPoint<presision, decimals, IsSMem>& round(long dec)
     {
         if (IsSMem)
-            mpz_._mp_d = &data_[0];
+            InitMpz();
         if (dec > long(decimals))
                 dec = long(decimals);
         if (dec <=  long(decimals) - long(presision))
@@ -561,7 +565,7 @@ public:
     FixPoint<presision, decimals, IsSMem>& round(const FixPoint<presision, decimals, IsSMem>& quant)
     {
         if (IsSMem)
-            mpz_._mp_d = &data_[0];
+            InitMpz();
         if (quant == zero())
             // nothing to round
             return *this;
@@ -585,7 +589,7 @@ public:
     FixPoint<presision, decimals, IsSMem>& mround(long dec)
 	{
         if (IsSMem)
-            mpz_._mp_d = &data_[0];
+            InitMpz();
         if (dec > long(decimals))
                 dec = long(decimals);
         if (dec <=  long(decimals) - long(presision))
@@ -610,7 +614,7 @@ public:
     FixPoint<presision, decimals, IsSMem>& mround(const FixPoint<presision, decimals, IsSMem>& quant)
     {
         if (IsSMem)
-            mpz_._mp_d = &data_[0];
+            InitMpz();
         if (quant == zero())
             // nothing to round
             return *this;
@@ -633,10 +637,10 @@ public:
         return *this;
     }
 
-    double get_d()
+    double get_d() const
 	{
         if (IsSMem)
-            mpz_._mp_d = &data_[0];
+            mpz_._mp_d = const_cast<mp_limb_t*>(&data_[0]);
         return mpz_get_d(&mpz_) / pow(10., decimals);
 	}
 
